@@ -104,4 +104,36 @@ mod tests {
             .functions
             .contains_key(&(base + thumb_off, CpuMode::Thumb)));
     }
+
+    #[test]
+    fn arm_mov_const32_encodes_all_four_byte_lanes_accurately() {
+        for &target_val in &[0x0400_00D4u32, 0x0001_1110, 0x1234_5678, 0xDEAD_BEEF, 6800] {
+            let mut asm = ArmAsm::new();
+            asm.mov_const32(3, target_val);
+            let bytes = asm.into_bytes();
+            let mut acc = 0u32;
+            for (i, chunk) in bytes.as_chunks::<4>().0.iter().enumerate() {
+                let inst = decode_arm((i * 4) as u32, u32::from_le_bytes(*chunk));
+                match inst.op {
+                    ArmOp::Alu {
+                        op: AluOp::Mov,
+                        rhs: ShiftedOp2::Imm { value, .. },
+                        ..
+                    } => acc = value,
+                    ArmOp::Alu {
+                        op: AluOp::Mvn,
+                        rhs: ShiftedOp2::Imm { value, .. },
+                        ..
+                    } => acc = !value,
+                    ArmOp::Alu {
+                        op: AluOp::Orr,
+                        rhs: ShiftedOp2::Imm { value, .. },
+                        ..
+                    } => acc |= value,
+                    other => panic!("unexpected op in mov_const32: {other:?}"),
+                }
+            }
+            assert_eq!(acc, target_val, "mismatch for 0x{target_val:08X}");
+        }
+    }
 }
