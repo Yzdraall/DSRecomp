@@ -21,13 +21,14 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Install Linux windowing headers (egui/winit)
+      - name: Install Linux windowing headers (X11 / Wayland / OpenGL)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
+            pkg-config libwayland-dev libx11-dev libxcursor-dev libxi-dev libxrandr-dev \
             libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
             libxkbcommon-dev libssl-dev libgl1-mesa-dev
 
@@ -48,7 +49,4 @@ jobs:
       - name: End-to-End Clean-Room NDS -> Safe Rust AOT Transpilation Smoke Test
         run: |
           cargo run --release -p dsrecomp -- demo --out-dir target/ci-demos --build-all
-          cargo run --release -p dsrecomp -- transpile target/ci-demos/overlay_quest.nds \
-            --out target/ci-port \
-            --headless-frames 20 \
-            --dump-png target/ci-port/frame.png
+          cargo run --release -p dsrecomp -- transpile target/ci-demos/overlay_quest.nds --out target/ci-port --headless-frames 20 --dump-png target/ci-port/frame.png
