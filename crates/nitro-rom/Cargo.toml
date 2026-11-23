@@ -1,0 +1,19 @@
+[package]
+name = "nitro-rom"
+description = "Pure-Rust Nintendo DS (.nds) cartridge parser, BLZ decompressor, Overlay loader & NitroFS extractor"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+hex.workspace = true
+serde.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,14 @@
+[package]
+name = "nitro-arm"
+description = "ARMv5TE & Thumb dual-ISA decoder, disassembler, interworking CFG analyzer & mini-assembler"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

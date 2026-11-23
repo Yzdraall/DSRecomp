@@ -1,0 +1,43 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/nitro-rom",
+    "crates/nitro-arm",
+    "crates/nitro-lifter",
+    "crates/nitro-runtime",
+    "crates/nitro-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Yzdraall/DSRecomp"
+keywords = ["nintendo-ds", "recompilation", "arm", "compiler", "emulation"]
+categories = ["compilers", "emulators", "command-line-utilities"]
+
+[workspace.dependencies]
+clap = { version = "4", features = ["derive"] }
+eframe = { version = "0.31", default-features = false, features = ["default_fonts", "glow"] }
+egui = "0.31"
+hex = "0.4"
+image = { version = "0.25", default-features = false, features = ["png"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+tempfile = "3"
+thiserror = "2"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "deny"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+strip = "symbols"

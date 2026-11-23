@@ -1,0 +1,21 @@
+# Rust build artifacts
+/target/
+**/target/
+
+# Generated transpiled workspaces & local test ROMs
+/out/
+/demos/*.nds
+*.nds
+*.srl
+*.sav
+*.dsv
+
+# Trace & runtime dumps
+trace_targets.json
+*.log
+
+# OS / IDE noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
