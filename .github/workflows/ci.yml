@@ -1,0 +1,54 @@
+name: DSRecomp CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check-and-test:
+    name: Verify (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux windowing headers (egui/winit)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libxkbcommon-dev libssl-dev libgl1-mesa-dev
+
+      - name: Setup Rust stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy strict lints (-D warnings, forbid unsafe)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Run unit & integration tests
+        run: cargo test --workspace
+
+      - name: End-to-End Clean-Room NDS -> Safe Rust AOT Transpilation Smoke Test
+        run: |
+          cargo run --release -p dsrecomp -- demo --out-dir target/ci-demos --build-all
+          cargo run --release -p dsrecomp -- transpile target/ci-demos/overlay_quest.nds \
+            --out target/ci-port \
+            --headless-frames 20 \
+            --dump-png target/ci-port/frame.png
