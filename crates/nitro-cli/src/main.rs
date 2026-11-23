@@ -337,8 +337,18 @@ fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
                 );
             }
 
+            let shared_target_dir = std::env::var_os("CARGO_TARGET_DIR")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| workspace_root.join("target"));
+
+            let ws_lock = workspace_root.join("Cargo.lock");
+            if ws_lock.is_file() && !out.join("Cargo.lock").exists() {
+                let _ = std::fs::copy(&ws_lock, out.join("Cargo.lock"));
+            }
+
             if build || run || headless_frames.is_some() || dump_png.is_some() {
                 let status = Command::new("cargo")
+                    .env("CARGO_TARGET_DIR", &shared_target_dir)
                     .arg("build")
                     .arg("--release")
                     .arg("--offline")
@@ -347,6 +357,7 @@ fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
                     .status()?;
                 if !status.success() {
                     let retry = Command::new("cargo")
+                        .env("CARGO_TARGET_DIR", &shared_target_dir)
                         .arg("build")
                         .arg("--release")
                         .arg("--manifest-path")
@@ -364,7 +375,7 @@ fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
                 } else {
                     manifest.crate_name.clone()
                 };
-                let bin_path = out.join("target").join("release").join(exe_name);
+                let bin_path = shared_target_dir.join("release").join(exe_name);
                 let mut cmd = Command::new(&bin_path);
                 cmd.arg("--rom").arg(&rom);
                 if let Some(frames) = headless_frames {

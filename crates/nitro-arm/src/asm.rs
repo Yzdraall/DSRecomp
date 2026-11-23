@@ -43,7 +43,8 @@ impl ArmAsm {
             if byte == 0 && (initialized || byte_idx < 3) {
                 continue;
             }
-            let rot = ((16 - byte_idx * 4) & 0x1E) / 2;
+            let rot_bits = (32 - byte_idx * 8) & 0x1F;
+            let rot = rot_bits / 2;
             let imm12 = ((rot as u16) << 8) | (byte as u16);
             if !initialized {
                 self.dp_imm(Cond::Al, 0xD, false, 0, rd, imm12); // MOV

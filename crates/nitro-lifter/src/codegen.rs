@@ -490,7 +490,7 @@ fn addr_offset_expr(offset: AddrOffset, inst: &DecodedInst) -> String {
                 format!("cpu.shift_imm_val({rm_e}, {}, {amount})", shift_code(shift))
             };
             if add {
-                format!("({shifted} as i32)")
+                format!("{shifted} as i32")
             } else {
                 format!("-({shifted} as i32)")
             }

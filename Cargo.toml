@@ -1,5 +1,6 @@
 [workspace]
 resolver = "2"
+exclude = ["out", "target"]
 members = [
     "crates/nitro-rom",
     "crates/nitro-arm",

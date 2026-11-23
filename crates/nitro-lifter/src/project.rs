@@ -219,7 +219,9 @@ pub fn transpile_rom_to_project(
     let rom_clean = rom_path.strip_prefix("//?/").unwrap_or(&rom_path);
 
     let cargo_toml = format!(
-        r#"[package]
+        r#"[workspace]
+
+[package]
 name = "{crate_name}"
 version = "0.1.0"
 edition = "2021"
@@ -315,7 +317,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {{
 
     let resolved_rom = rom_path.unwrap_or_else(|| PathBuf::from("{default_rom_hint}"));
     let rom = NdsRom::from_file(&resolved_rom)?;
-    let mut machine = NitroMachine::from_rom(rom, generated::dispatch_aot);
+    let machine = NitroMachine::from_rom(rom, generated::dispatch_aot);
 
     let cfg = LaunchConfig {{
         window_title: format!("DSRecomp Native — {title}"),

@@ -1,5 +1,5 @@
-/// Architectural cycle budget per 60 Hz Nintendo DS frame (`~67.028 MHz / 59.826 Hz` scaled to instruction ticks).
-pub const FRAME_INSTRUCTION_BUDGET: u64 = 250_000;
+/// Architectural cycle budget per 60 Hz Nintendo DS frame (`67.028 MHz / 59.826 Hz ≈ 1,120,380` cycles).
+pub const FRAME_INSTRUCTION_BUDGET: u64 = 1_120_000;
 pub const MAX_CALL_NESTING: u32 = 48;
 
 /// ARM946E-S CPU register file, condition flags, and AOT execution counters.

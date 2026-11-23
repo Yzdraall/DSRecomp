@@ -209,32 +209,48 @@ pub fn build_plasma_dual_rom() -> Vec<u8> {
     arm.branch_to_offset(Cond::Al, false, frame_loop);
 
     // Thumb subroutine (`thumb_plasma_pixel(x=r0, y=r1, t=r2) -> r0`):
+    // Renders a synthwave sun disc + glowing horizon & shimmering water reflections!
     let thumb_off = arm.offset();
     let mut th = ThumbAsm::new();
-    // r3 = (x + t * 2) >> 3 (red wave 0..31)
+    th.push((1 << 4) | (1 << 5) | (1 << 6), false);
+    // Compute dx = x - 128 (`r4`), dy = y - 64 (`r5`), dist2 = dx*dx + dy*dy (`r6`)
+    th.mov_imm(4, 128);
+    th.emit_u16(0x1B04); // subs r4, r0, r4
+    th.emit_u16(0x1826); // adds r6, r4, #0
+    th.mul_reg(6, 4); // r6 = dx * dx
+    th.mov_imm(5, 64);
+    th.emit_u16(0x1B4D); // subs r5, r1, r5
+    th.mul_reg(5, 5); // r5 = dy * dy
+    th.add_reg3(6, 6, 5); // r6 = dx^2 + dy^2
+
+    // Base sky/water waves: r3 = ((x + t*2) >> 3), r4 = ((y + t) ^ (x >> 2)) >> 3, r5 = (31 - (y >> 3))
     th.lsl_imm(3, 2, 1);
     th.add_reg3(3, 0, 3);
-    th.lsr_imm(3, 3, 3);
-    // r4_tmp in r1: g = ((y + t) ^ (x >> 1)) >> 3
-    th.push(1 << 4, false);
+    th.lsr_imm(3, 3, 2);
+
     th.add_reg3(4, 1, 2);
-    th.lsr_imm(0, 0, 1);
-    th.eor_reg(4, 0);
-    th.lsr_imm(4, 4, 3);
-    // b = (31 - (y >> 3)) & 31
-    th.lsr_imm(1, 1, 3);
-    th.mov_imm(0, 31);
-    th.and_low_mask_31(&mut [3, 4, 1]);
-    // Pack `(b << 10) | (g << 5) | r`
-    th.lsl_imm(1, 1, 10);
+    th.lsr_imm(5, 0, 2);
+    th.eor_reg(4, 5);
+    th.lsr_imm(4, 4, 2);
+
+    th.lsr_imm(5, 1, 2);
+    // Boost warm gold inside sun (`dist2 < 1024`, i.e. `r6 >> 10 == 0`)!
+    th.lsr_imm(6, 6, 10);
+    th.emit_u16(0x2E00); // cmp r6, #0
+    th.emit_u16(0xD102); // bne +2 insts
+    th.mov_imm(3, 31); // sun R = 31
+    th.mov_imm(4, 24); // sun G = 24
+
+    th.and_low_mask_31(&mut [3, 4, 5]);
+    // Pack `(b << 10) | (g << 5) | r | 0x8000`
+    th.lsl_imm(5, 5, 10);
     th.lsl_imm(4, 4, 5);
     th.orr_reg(3, 4);
-    th.orr_reg(3, 1);
-    // Set bit 15 (`0x8000`)
+    th.orr_reg(3, 5);
     th.mov_imm(0, 1);
     th.lsl_imm(0, 0, 15);
     th.orr_reg(0, 3);
-    th.pop(1 << 4, false);
+    th.pop((1 << 4) | (1 << 5) | (1 << 6), false);
     th.bx(14); // BX LR back to ARM mode!
 
     let mut code = arm.into_bytes();
@@ -581,12 +597,16 @@ fn build_biome_overlay(base: u32, crimson_boss: bool) -> Vec<u8> {
         arm.mov_const32(6, u32::from(palette_bot[c]));
 
         let fill = arm.offset();
-        arm.and_imm(12, 4, 31);
+        // Patterned pixel shading `(x ^ y ^ frame)` across both screens!
+        arm.and_imm(12, 4, 63);
         arm.add_reg(12, 12, 1);
-        arm.and_imm(12, 12, 16);
+        arm.and_imm(12, 12, 31);
         arm.eor_reg(12, 5, 12);
         arm.str_u16_post(12, 2, 2);
-        arm.str_u16_post(6, 3, 2);
+        arm.eor_reg(12, 6, 12);
+        arm.mov_const32(0, 0x8000);
+        arm.orr_reg(12, 12, 0);
+        arm.str_u16_post(12, 3, 2);
         arm.subs_imm(4, 4, 1);
         arm.branch_to_offset(Cond::Ne, false, fill);
 
